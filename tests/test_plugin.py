@@ -1,3 +1,4 @@
+import sys
 from unittest.mock import MagicMock, patch
 
 import pytest_pythonhashseed as plugin
@@ -66,3 +67,23 @@ def test_pytest_configure_opt_mismatch_env():
         config.getoption.assert_called_once_with('pythonhashseed')
         execve.assert_called_once()
         assert execve.call_args.args[2] == {'PYTHONHASHSEED': '0', 'SMTH': '1'}
+
+
+@patch.dict('os.environ', {'PYTHONHASHSEED': '42'}, clear=True)
+def test_pytest_configure_opt_mismatch_env_run_as_module():
+    config = MagicMock()
+    config.getoption.return_value = 0
+
+    mod = MagicMock()
+    mod.__spec__ = MagicMock()
+    mod.__spec__.name = 'pytest_module_name.__main__'
+
+    with patch.dict('sys.modules', {'__main__': mod}):  # noqa: SIM117
+        with patch('os.execve') as execve:
+            plugin.pytest_configure(config)
+
+            assert execve.call_args.args[1][:3] == [
+                sys.executable,
+                '-m',
+                'pytest_module_name',
+            ]

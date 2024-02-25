@@ -17,7 +17,7 @@
 import os
 import sys
 
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 __author__ = 'Michael Samoglyadov'
 __license__ = 'Apache License, Version 2.0'
 __website__ = 'https://github.com/mr-mixas/pytest-pythonhashseed'
@@ -42,6 +42,18 @@ def pytest_configure(config):
 
     env_hashseed = os.environ.get('PYTHONHASHSEED')
 
-    if env_hashseed is None or int(env_hashseed) != opt_hashseed:
-        os.environ['PYTHONHASHSEED'] = str(opt_hashseed)
-        os.execve(sys.argv[0], sys.argv, os.environ)  # noqa: S606
+    if env_hashseed is not None and int(env_hashseed) == opt_hashseed:
+        return
+
+    module_spec = sys.modules['__main__'].__spec__
+
+    if module_spec is None:  # run as standalone script
+        argv = sys.argv
+    else:  # run as `python -m ...`
+        # abspath to module instead of binary in argv[0] in this case
+        # see details in https://bugs.python.org/issue23427#msg371022
+        module_name = module_spec.name.rsplit('.', 1)[0]
+        argv = [sys.executable, '-m', module_name, *sys.argv[1:]]
+
+    os.environ['PYTHONHASHSEED'] = str(opt_hashseed)
+    os.execvpe(argv[0], argv, os.environ)  # noqa: S606
