@@ -70,10 +70,7 @@ def pytest_configure(config):
         # pytest doesn't like sys.exit, so we use os._exit instead.
         result = subprocess.run(argv, check=False, env=os.environ)  # noqa: S603
         pytest.exit(
-            f'Unit tests failed: {result.returncode}\n'
-            f'{result.stdout}\n'
-            f'{result.stderr}',
-            result.returncode,
+            returncode=result.returncode,
         )
     else:
         os.execvpe(argv[0], argv, env=os.environ)  # noqa: S606
