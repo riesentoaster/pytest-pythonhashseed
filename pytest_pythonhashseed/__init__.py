@@ -69,4 +69,4 @@ def pytest_configure(config):
         result = subprocess.run(argv, check=False, env=os.environ)  # noqa: S603
         os._exit(result.returncode)
     else:
-        os.execvpe(argv[0], argv, os.environ)  # noqa: S606
+        os.execvpe(argv[0], argv, env=os.environ)  # noqa: S606
