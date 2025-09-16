@@ -20,6 +20,7 @@ def _assert_platform_specific_calls(
     mock_obj.assert_called_once()
     assert mock_obj.call_args.args[-1] == expected_env
     if expected_extra_args:
+        print(mock_obj.call_args.args)
         actual_args = mock_obj.call_args.args[1]
         expected_args = expected_extra_args + sys.argv[1:]
         assert actual_args == expected_args
