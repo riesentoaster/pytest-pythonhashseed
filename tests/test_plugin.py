@@ -28,7 +28,6 @@ def _assert_platform_specific_calls(
         expected_arg_len = 2
     assert len(mock_obj.call_args.args) == expected_arg_len
     if expected_extra_args:
-        print(mock_obj.call_args.args)  # noqa: T201
         actual_args = mock_obj.call_args.args[1]
         expected_args = expected_extra_args + sys.argv[1:]
         assert actual_args == expected_args

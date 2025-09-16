@@ -67,7 +67,6 @@ def pytest_configure(config):
         # immediately terminates. This means that the new process does not have
         # time to actually run the tests. So we use subprocess.run to run the
         # tests in the new process and then force exit the original process.
-        # pytest doesn't like sys.exit, so we use os._exit instead.
         result = subprocess.run(argv, check=False, env=os.environ)  # noqa: S603
         pytest.exit(
             returncode=result.returncode,
