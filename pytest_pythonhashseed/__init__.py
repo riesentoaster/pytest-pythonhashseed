@@ -18,6 +18,8 @@ import os
 import subprocess
 import sys
 
+import pytest
+
 __version__ = '1.0.1'
 __author__ = 'Michael Samoglyadov'
 __license__ = 'Apache License, Version 2.0'
@@ -67,6 +69,11 @@ def pytest_configure(config):
         # tests in the new process and then force exit the original process.
         # pytest doesn't like sys.exit, so we use os._exit instead.
         result = subprocess.run(argv, check=False, env=os.environ)  # noqa: S603
-        os._exit(result.returncode)
+        pytest.exit(
+            f'Unit tests failed: {result.returncode}\n'
+            f'{result.stdout}\n'
+            f'{result.stderr}',
+            result.returncode,
+        )
     else:
         os.execvpe(argv[0], argv, env=os.environ)  # noqa: S606
