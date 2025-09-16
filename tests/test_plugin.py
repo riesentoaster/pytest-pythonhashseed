@@ -19,8 +19,8 @@ def _assert_platform_specific_calls(
 ):
     """Assert platform-specific calls based on the current platform."""
     mock_obj.assert_called_once()
-    assert mock_obj.call_args.args[-1] == expected_env
-    assert mock_obj.call_args.kwargs == {}
+
+    assert mock_obj.call_args.kwargs == {'env': expected_env}
     if sys.platform == 'win32':
         assert mock_obj.call_args.args[2] is False  # check=False
         expected_arg_len = 3
