@@ -15,6 +15,7 @@
 """Pytest plugin to set PYTHONHASHSEED env var."""
 
 import os
+import subprocess
 import sys
 
 __version__ = '1.0.1'
@@ -47,7 +48,9 @@ def pytest_configure(config):
 
     module_spec = sys.modules['__main__'].__spec__
 
-    if module_spec is None:  # run as standalone script
+    if (
+        module_spec is None or module_spec.name == '__main__'
+    ):  # run as standalone script
         argv = sys.argv
     else:  # run as `python -m ...`
         # abspath to module instead of binary in argv[0] in this case
@@ -56,4 +59,14 @@ def pytest_configure(config):
         argv = [sys.executable, '-m', module_name, *sys.argv[1:]]
 
     os.environ['PYTHONHASHSEED'] = str(opt_hashseed)
-    os.execvpe(argv[0], argv, os.environ)  # noqa: S606
+
+    if sys.platform == 'win32':
+        # On Windows, os.execvpe re-spawns a process, but the original process
+        # immediately terminates. This means that the new process does not have
+        # time to actually run the tests. So we use subprocess.run to run the
+        # tests in the new process and then force exit the original process.
+        # pytest doesn't like sys.exit, so we use os._exit instead.
+        result = subprocess.run(argv, env=os.environ)
+        os._exit(result.returncode)
+    else:
+        os.execvpe(argv[0], argv, os.environ)  # noqa: S606
