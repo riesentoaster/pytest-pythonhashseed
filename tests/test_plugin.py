@@ -9,7 +9,7 @@ def _get_platform_specific_patches():
     if sys.platform == 'win32':
         return patch('subprocess.run', return_value=MagicMock(returncode=0))
 
-    return patch('os.execve')
+    return patch('os.execvpe')
 
 
 def _assert_platform_specific_calls(
@@ -20,6 +20,13 @@ def _assert_platform_specific_calls(
     """Assert platform-specific calls based on the current platform."""
     mock_obj.assert_called_once()
     assert mock_obj.call_args.args[-1] == expected_env
+    assert mock_obj.call_args.kwargs == {}
+    if sys.platform == 'win32':
+        assert mock_obj.call_args.args[2] is False  # check=False
+        expected_arg_len = 3
+    else:
+        expected_arg_len = 2
+    assert len(mock_obj.call_args.args) == expected_arg_len
     if expected_extra_args:
         print(mock_obj.call_args.args)  # noqa: T201
         actual_args = mock_obj.call_args.args[1]
