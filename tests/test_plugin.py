@@ -7,7 +7,10 @@ import pytest_pythonhashseed as plugin
 def _get_platform_specific_patches():
     """Return the appropriate patch context manager based on platform."""
     if sys.platform == 'win32':
-        return patch('subprocess.run')
+        subprocess = patch('subprocess.run')
+        subprocess.return_value.returncode = 0
+        return subprocess
+
     return patch('os.execve')
 
 
