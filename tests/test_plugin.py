@@ -4,6 +4,35 @@ from unittest.mock import MagicMock, patch
 import pytest_pythonhashseed as plugin
 
 
+def _get_platform_specific_patches():
+    """Return the appropriate patch context manager based on platform."""
+    if sys.platform == 'win32':
+        return patch('subprocess.run', return_value=MagicMock(returncode=0))
+
+    return patch('os.execvpe')
+
+
+def _assert_platform_specific_calls(
+    mock_obj,
+    expected_extra_args=None,
+    expected_env=None,
+):
+    """Assert platform-specific calls based on the current platform."""
+    mock_obj.assert_called_once()
+
+    assert mock_obj.call_args.kwargs == {'env': expected_env}
+    if sys.platform == 'win32':
+        assert mock_obj.call_args.args[2] is False  # check=False
+        expected_arg_len = 3
+    else:
+        expected_arg_len = 2
+    assert len(mock_obj.call_args.args) == expected_arg_len
+    if expected_extra_args:
+        actual_args = mock_obj.call_args.args[1]
+        expected_args = expected_extra_args + sys.argv[1:]
+        assert actual_args == expected_args
+
+
 def test_pytest_addoption():
     parser = MagicMock()
     group = MagicMock()
@@ -21,11 +50,11 @@ def test_pytest_configure_opt_not_defined():
     config = MagicMock()
     config.getoption.return_value = None
 
-    with patch('os.execve') as execve:
+    with _get_platform_specific_patches() as mock_func:
         plugin.pytest_configure(config)
 
         config.getoption.assert_called_once_with('pythonhashseed')
-        execve.assert_not_called()
+        mock_func.assert_not_called()
 
 
 @patch.dict('os.environ', {'SMTH': '1'}, clear=True)
@@ -33,15 +62,16 @@ def test_pytest_configure_opt_set_env_not():
     config = MagicMock()
     config.getoption.return_value = 42
 
-    with patch('os.execve') as execve:
+    with _get_platform_specific_patches() as mock_func:
         plugin.pytest_configure(config)
 
         config.getoption.assert_called_once_with('pythonhashseed')
-        execve.assert_called_once()
-        assert execve.call_args.args[2] == {
-            'PYTHONHASHSEED': '42',
-            'SMTH': '1',
-        }
+
+        expected_env = {'PYTHONHASHSEED': '42', 'SMTH': '1'}
+        _assert_platform_specific_calls(
+            mock_func,
+            expected_env=expected_env,
+        )
 
 
 @patch.dict('os.environ', {'PYTHONHASHSEED': '42'}, clear=True)
@@ -49,11 +79,11 @@ def test_pytest_configure_opt_match_env():
     config = MagicMock()
     config.getoption.return_value = 42
 
-    with patch('os.execve') as execve:
+    with _get_platform_specific_patches() as mock_func:
         plugin.pytest_configure(config)
 
         config.getoption.assert_called_once_with('pythonhashseed')
-        execve.assert_not_called()
+        mock_func.assert_not_called()
 
 
 @patch.dict('os.environ', {'PYTHONHASHSEED': '42', 'SMTH': '1'}, clear=True)
@@ -61,12 +91,16 @@ def test_pytest_configure_opt_mismatch_env():
     config = MagicMock()
     config.getoption.return_value = 0
 
-    with patch('os.execve') as execve:
+    with _get_platform_specific_patches() as mock_func:
         plugin.pytest_configure(config)
 
         config.getoption.assert_called_once_with('pythonhashseed')
-        execve.assert_called_once()
-        assert execve.call_args.args[2] == {'PYTHONHASHSEED': '0', 'SMTH': '1'}
+
+        expected_env = {'PYTHONHASHSEED': '0', 'SMTH': '1'}
+        _assert_platform_specific_calls(
+            mock_func,
+            expected_env=expected_env,
+        )
 
 
 @patch.dict('os.environ', {'PYTHONHASHSEED': '42'}, clear=True)
@@ -79,11 +113,17 @@ def test_pytest_configure_opt_mismatch_env_run_as_module():
     mod.__spec__.name = 'pytest_module_name.__main__'
 
     with patch.dict('sys.modules', {'__main__': mod}):  # noqa: SIM117
-        with patch('os.execve') as execve:
+        with _get_platform_specific_patches() as mock_func:
             plugin.pytest_configure(config)
 
-            assert execve.call_args.args[1][:3] == [
+            expected_extra_args = [
                 sys.executable,
                 '-m',
                 'pytest_module_name',
             ]
+            expected_env = {'PYTHONHASHSEED': '0'}
+            _assert_platform_specific_calls(
+                mock_func,
+                expected_extra_args=expected_extra_args,
+                expected_env=expected_env,
+            )
