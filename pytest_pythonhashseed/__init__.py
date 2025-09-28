@@ -1,4 +1,4 @@
-# Copyright 2024 Michael Samoglyadov
+# Copyright 2024-2025 Michael Samoglyadov
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import sys
 
 import pytest
 
-__version__ = '1.0.1'
+__version__ = '2.0.0'
 __author__ = 'Michael Samoglyadov'
 __license__ = 'Apache License, Version 2.0'
 __website__ = 'https://github.com/mr-mixas/pytest-pythonhashseed'
