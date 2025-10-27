@@ -62,7 +62,7 @@ def pytest_configure(config):
         argv = [sys.executable, '-m', module_name, *sys.argv[1:]]
 
     if argv[0].split('/')[-2:] == ['vscode_pytest', 'run_pytest_script.py']:
-        warnings.warn(f"Detected vscode_pytest, skipping PYTHONHASHSEED")
+        warnings.warn('Detected vscode_pytest, skipping PYTHONHASHSEED', stacklevel=2)
         return
 
     os.environ['PYTHONHASHSEED'] = str(opt_hashseed)
