@@ -63,7 +63,7 @@ def pytest_configure(config):
 
     if argv[0].split('/')[-2:] == ['vscode_pytest', 'run_pytest_script.py']:
         warnings.warn(
-            'Detected vscode_pytest, skipping PYTHONHASHSEED', stacklevel=2
+            'Detected vscode_pytest, skipping PYTHONHASHSEED', stacklevel=2,
         )
         return
 
